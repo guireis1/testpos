@@ -1,0 +1,39 @@
+name: postagging-predict-local
+channels:
+  - defaults
+dependencies:
+  - pip=20.3.3
+  - python=3.6.12
+  - wheel=0.36.2
+  - numpy=1.19.1
+  - numpy-base=1.19.1
+  - pip:
+    - absl-py==0.10.0
+    - bleach==3.2.1
+    - boto==2.49.0
+    - boto3==1.15.3
+    - botocore==1.18.3
+    - cachetools==4.1.1
+    - cffi==1.14.3
+    - chardet==3.0.4
+    - colorama==0.4.4
+    - configargparse==1.2.3
+    - cython==0.29.14
+    - dataclasses==0.8
+    - docutils==0.16
+    - emoji==0.6.0
+    - gensim==3.8.3
+    - grpcio==1.32.0
+    - idna==2.10
+    - importlib-metadata==2.0.0
+    - intel-openmp==2021.1.2
+    - jmespath==0.10.0
+    - keyring==21.8.0
+    - markdown==3.2.2
+    - mkl==2021.1.1
+    - oauthlib==3.1.0
+    - packaging==20.8
+    - pillow==7.2.0
+    - torch==1.7.1
+    - TakeSentenceTokenizer==1.0.1
+prefix: D:\apps\Anaconda3\envs\postagging-predict-local

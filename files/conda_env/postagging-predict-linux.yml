@@ -1,0 +1,27 @@
+name: postagging-predict-linux
+channels:
+  - defaults
+dependencies:
+  - pip=20.3.3
+  - python=3.6.12
+  - numpy=1.19.1
+  - numpy-base=1.19.1
+  - pip:
+    - azureml-core==1.18.0
+    - azureml-contrib-services==1.18.0
+    - azureml-defaults==1.18.0
+    - configargparse==1.2.3
+    - configparser==3.7.4
+    - gensim==3.8.3
+    - inference-schema==1.1.0
+    - intel-openmp==2021.1.2
+    - json-logging-py==0.2
+    - jsonpickle==1.4.2
+    - keyring==21.8.0
+    - markdown==3.2.2
+    - mkl==2021.1.1
+    - pyaap==1.0.1
+    - takesentencetokenizer==1.0.1
+    - TakeBlipPosTagger==0.1.2
+    - torch==1.7.1
+prefix: D:\apps\Anaconda3\envs\postagging-predict-linux

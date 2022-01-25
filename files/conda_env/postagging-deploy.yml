@@ -1,0 +1,18 @@
+name: postagging-deploy
+channels:
+  - defaults
+dependencies:
+  - numpy=1.19.1
+  - numpy-base=1.19.1
+  - pip=20.3.3
+  - requests=2.25.1
+  - setuptools=51.3.3
+  - twine=3.2.0
+  - wheel=0.36.2
+  - pip:
+    - azure-storage-blob==12.5.0
+    - azureml-core==1.18.0.post4
+    - azureml-pipeline==1.18.0
+    - gensim==3.8.3
+    - torch==1.7.1
+prefix: D:\apps\Anaconda3\envs\postagging-deploy
