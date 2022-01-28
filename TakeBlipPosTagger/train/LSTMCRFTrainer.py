@@ -1,7 +1,7 @@
 import os
 import logging
-import mlflow
 
+import mlflow
 import numpy as np
 import torch
 import torch.optim as optim
@@ -49,9 +49,10 @@ class LSTMCRFTrainer(object):
         self.learning_rate_decay = learning_rate_decay
         self.logic_break = False
         self.azureml_logger = azureml_logger
+        # self.azureml_modelsave = azureml_modelsave
         self.validation_number = 0
         self.run_id = run_id
-
+        
         self.repeatables = {}
 
         if self.val:
@@ -129,63 +130,76 @@ class LSTMCRFTrainer(object):
     def save_model(self, steps=None):
         save_path = os.path.join(self.save_dir, 'model.pkl')
         torch.save(self.model, save_path)
+        # if self.azureml_logger and self.azureml_modelsave:
+        #     try:
+        #         self.azureml_modelsave(self.save_dir, self.azureml_logger)
+        #     except Exception as e:
+        #         logging.error('Error saving model', e)
 
     def on_epoch_complete(self, epoch_idx, global_iter, global_step):
-      print("repeatables")
-      print(self.repeatables)
-      print(type(self.repeatables))
-      print(self.repeatables.items())
-      for period_checker, func in self.repeatables.items():
-          if period_checker(epochs=epoch_idx,
-                            iters=global_iter,
-                            steps=global_step):
-              func(steps=global_step)
-              self.model.train(True)
+        print("repeatables")
+        print(self.repeatables)
+        print(type(self.repeatables))
+        print(self.repeatables.items())
+        for period_checker, func in self.repeatables.items():
+            if period_checker(epochs=epoch_idx,
+                              iters=global_iter,
+                              steps=global_step):
+                func(steps=global_step)
+                self.model.train(True)
 
     def train(self):
-          
-      self.model.train(True)
-      global_step = 0
-      global_iter = 0
+        self.model.train(True)
+        global_step = 0
+        global_iter = 0
 
-      for epoch_idx in range(self.epochs):
-          epoch_idx += 1
-          train_data = self.load_data(train=True)
-          for iteration_idx, (batch, lens, _) in enumerate(train_data):
-              batch_size = batch[0].size(0)
-              iteration_idx += 1
-              global_step += batch_size
-              global_iter += 1
+        for epoch_idx in range(self.epochs):
+            epoch_idx += 1
+            train_data = self.load_data(train=True)
+            for iteration_idx, (batch, lens, _) in enumerate(train_data):
+                batch_size = batch[0].size(0)
+                iteration_idx += 1
+                global_step += batch_size
+                global_iter += 1
 
-              self.model.zero_grad()
+                self.model.zero_grad()
 
-              batch_sentences, batch_labels = batch[:-1], batch[-1]
-              batch_sentences, batch_labels_var, lens_s = utils.prepare_batch(batch_sentences, batch_labels, lens)
-              loglik = self.model.loglik(batch_sentences, batch_labels_var, lens_s)
-              negative_loglik = -loglik.mean()
-              print("negative_loglik", negative_loglik.item())
-              mlflow.log_metric("negative_loglik", negative_loglik.item())
-              #self.azureml_logger.save_negative_loglik(negative_loglik)
-              negative_loglik.backward()
-              self.optimizer.step()
+                batch_sentences, batch_labels = batch[:-1], batch[-1]
+                batch_sentences, batch_labels_var, lens_s = utils.prepare_batch(batch_sentences, batch_labels, lens)
+                loglik = self.model.loglik(batch_sentences, batch_labels_var, lens_s)
+                negative_loglik = -loglik.mean()
+                print("negative_loglik", negative_loglik.item())
+                mlflow.log_metric("negative_loglik", negative_loglik.item())
+                #self.azureml_logger.save_negative_loglik(negative_loglik)
+                negative_loglik.backward()
+                self.optimizer.step()
 
-              if global_step % (self.batch_size * self.n_iter) == 0:
-                  if self.logic_break:
-                      mlflow.log_metric("Final iteration", global_iter)
-                      #mlflow.log_metric("Final negative_loglik", negative_loglik.item())   
-                      return self.model
-                      break
-          train_data.dataset.close_file()
-          self.on_epoch_complete(epoch_idx, global_iter, global_step)
-          if self.logic_break:
-              mlflow.log_metric("Final iteration", global_iter)
-              #mlflow.log_metric("Final negative_loglik", negative_loglik.item())   
-              return self.model
-              break
-
-      mlflow.log_metric("Final iteration", global_iter)
-      #self.save_model()
-      return self.model
+                if global_step % (self.batch_size * self.n_iter) == 0:
+                    # logging.info(f'iteration = {global_iter}  negative_loglik={negative_loglik:.4f}')
+                    if self.logic_break:
+                        # logging.info('Early stopping')
+                        # logging.info('Saving model ...')
+                        # self.save_model()
+                        mlflow.log_metric("Final iteration", global_iter)
+                        #mlflow.log_metric("Final negative_loglik", negative_loglik.item())   
+                        return self.model
+                        break
+            train_data.dataset.close_file()
+            self.on_epoch_complete(epoch_idx, global_iter, global_step)
+            if self.logic_break:
+                # logging.info('Early stopping')
+                # logging.info('Saving model ...')
+                # self.save_model()
+                mlflow.log_metric("Final iteration", global_iter)
+                #mlflow.log_metric("Final negative_loglik", negative_loglik.item())   
+                return self.model
+                break
+        # logging.info(f'iteration ={global_iter}')
+        # logging.info(f'negative_loglik={negative_loglik:.4f}')
+        # logging.info('Saving model ...')
+        # self.save_model()
+        mlflow.log_metric("Final iteration", global_iter)
+        return self.model
 
     def check_loss(self, loss):
         if loss < self.min_dev_loss * self.patience_threshold:
@@ -273,14 +287,10 @@ class LSTMCRFTrainer(object):
 
         confusion_matrix = confusion_matrix[2:, 2:]
         print(confusion_matrix)
-        
-        #mlflow.log_metric("precision", confusion_matrix.diag() / confusion_matrix.sum(dim=0))
-        #mlflow.log_metric("recall", confusion_matrix.diag() / confusion_matrix.sum(dim=1))
+        # logging.info(f'precision: {confusion_matrix.diag() / confusion_matrix.sum(dim=0)}')
+        # logging.info(f'recall: {confusion_matrix.diag() / confusion_matrix.sum(dim=1)}')
+        # logging.info(f'negative_loglik validate {loss:.4f}')
         mlflow.log_metric("negative_loglik validate", loss.item())
-        #logging.info(f'precision: {confusion_matrix.diag() / confusion_matrix.sum(dim=0)}')
-        #logging.info(f'recall: {confusion_matrix.diag() / confusion_matrix.sum(dim=1)}')
-        #logging.info(f'negative_loglik validate {loss:.4f}')
-        
         
         if self.azureml_logger: 
             self.azureml_logger.save_confusion_matrix_from_tensor(
@@ -293,7 +303,6 @@ class LSTMCRFTrainer(object):
                 labels=list(self.label_vocab.f2i.keys())[2:]
             )
             #self.azureml_logger.save_validation_metrics(loss)
-            #seems to log as negative_loglik logged above
         else:
           logger.MLflowLogger.save_confusion_matrix_from_tensor(
                   confusion_matrix=confusion_matrix,
@@ -303,8 +312,4 @@ class LSTMCRFTrainer(object):
                   save_dir=self.save_dir
               )
         self.validation_number += 1
-
-
-# COMMAND ----------
-
 

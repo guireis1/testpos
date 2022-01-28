@@ -2,12 +2,10 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-
 def log_sum_exp(vec, dim=0):
     max, idx = torch.max(vec, dim)
     max_exp = max.unsqueeze(-1).expand_as(vec)
     return max + torch.log(torch.sum(torch.exp(vec - max_exp), dim))
-
 
 class CRF(nn.Module):
     def __init__(self, vocab_size, pad_idx, unk_idx, device):
@@ -263,7 +261,6 @@ class LSTMCRF(nn.Module):
             return loglik, logits
         else:
             return loglik
-
 
 def sequence_mask(lens, device, max_len=None):
     batch_size = lens.size(0)
