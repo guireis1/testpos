@@ -21,7 +21,7 @@ class MultiSentWordDataset(IterableDataset):
 
     def __set_process(self, use_pre_processing):
         if use_pre_processing:
-            self.process = self.pre_process  
+            self.process = self.line_pre_process
         else:
             self.process = self.split_sentence
 
@@ -35,7 +35,7 @@ class MultiSentWordDataset(IterableDataset):
         return [self.process(line[0])]
 
     @staticmethod
-    def pre_process(sentence):
+    def line_pre_process(sentence):
         return pre_process(sentence, PREPROCESS_OPTION).split()
 
     @staticmethod
@@ -51,18 +51,30 @@ class MultiSentWordDataset(IterableDataset):
 
 
 class MultiSentWordBatchDataset(Dataset):
-    def __init__(self, sentences):
+    def __init__(self, use_pre_processing, sentences):
+        self.use_pre_processing = use_pre_processing
         self.sentences = sentences
+        self.__set_default_process()
 
     @staticmethod
-    def pre_process(sentence):
+    def line_pre_process(sentence):
         return pre_process(sentence, PREPROCESS_OPTION).split()
+
+    @staticmethod
+    def split_sentence(sentence):
+        return sentence.split()
+
+    def __set_default_process(self):
+        if self.use_pre_processing:
+            self.process = self.line_pre_process
+        else:
+            self.process = self.split_sentence
 
     def __len__(self):
         return len(self.sentences)
 
     def __getitem__(self, idx):
-        return [self.pre_process(self.sentences[idx]['sentence']),
+        return [self.process(self.sentences[idx]['sentence']),
                 int(self.sentences[idx]['id'])]
 
 

@@ -1,11 +1,25 @@
-# Part Of Speech Tagging using BiLSTM-CRF on PyTorch #
+# TakeBlipPosTagging Package
+_Data & Analytics Research_
 
-An efficient BiLSTM-CRF implementation for solving Part Of Speech Tagging (POSTagging) problem.
+## Overview
+The Part Of Speech Tagging (POSTagging) is the process of labeling a word in a text (corpus) with it's corresponding particular part of speech.
+This implementation uses BiLSTM-CRF for solving the POSTagging task utilizing PyTorch framework for training a supervised model and predicting in CPU. 
+For training it receives a pre-trained FastText Gensim embedding and a .csv file. It outputs three pickle files: model, word vocabulary and label vocabulary. 
 
-This version of code works in:
+Here are presented these content:
 
-* pytorch: versão
-* python: versão
+* [Installation](#installation)
+* [File Format](#fileformat)
+* [Configure](#configure)
+* [Run](#run)
+
+
+## Installation
+
+This version works in:
+
+* PyTorch: 1.7.1
+* Python: 3.6
 
 ## Requirements ##
 
@@ -18,14 +32,14 @@ Install all required packages (other than pytorch) from `requirements.txt`
 Prepare data first. Data must be supplied in one csv file where the first column contain the sentences and the second one the respective labels for that sentence. File might be prepared as follows:
 
     (sample.csv)
-	MessageProcessed,					Tags
-    the fat rat sat on a mat,	det adj noun verb prep det noun
-    the cat sat on a mat,		det noun verb prep det noun
+	MessageProcessed,		                Tags
+    quero o meu boleto,	                        VERB ART PRON SUBS
+    não consegui contato por telefone,		ADV VERB SUBS PREP SUBS
     ...,						...
     
 Then the above input is provided to `train.py` using `--input-path` and the column name for the sentences and the labels using `--sentence_column` and `--label_column`.
 
-    python train.py --input-path files/input/sample.csv --sentence_column MessageProcessed --label_column Tags ...
+    python train.py --input-path *.csv --sentence_column MessageProcessed --label_column Tags ...
 
 You might need to setup several more parameters in order to make it work. 
 
@@ -40,46 +54,30 @@ And parameters for validation and early stopping.
 ## Our Training ##
 For local execution run command:
 
-	python train.py --input-path files/input/sample.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir files/output/ --wordembed-path files/input/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv --epochs 5
+	python train.py --input-path *.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir * --wordembed-path *.kv --epochs 5
 
-	python train.py --input-path files/input/sample.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir files/output/ --wordembed-path files/input/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv --epochs 5 --val --val-path files/input/sample_validation.csv --bidirectional --val-period 1e
+	python train.py --input-path *.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir * --wordembed-path f*.kv --epochs 5 --val --val-path *.csv --bidirectional --val-period 1e
     
-    python train.py --input-path files/input/sample.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir files/output/ --wordembed-path files/input/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv --epochs 5 --val --val-path files/input/sample_validation.csv --bidirectional --val-period 10i --max-decay-num 2 --max-patience 2 --learning-rate-decay 0.1 --patience-threshold 0.98
+    python train.py --input-path *.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir * --wordembed-path *.kv --epochs 5 --val --val-path *.csv --bidirectional --val-period 10i --max-decay-num 2 --max-patience 2 --learning-rate-decay 0.1 --patience-threshold 0.98
  
-    	
-For running on Google Colab:
 
-	!python train.py --input-path files/input/sample.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir files/output/ --wordembed-path '/content/gdrive/Shared drives/Data & Analytics/D&A Research/TKS/Modelos/Embedding/FastText/kv/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv' --epochs 5
-
-	!python train.py --input-path files/input/sample.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir files/output/ --wordembed-path '/content/gdrive/Shared drives/Data & Analytics/D&A Research/TKS/Modelos/Embedding/FastText/kv/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv' --epochs 5 --val --val-path files/input/sample_validation.csv --bidirectional --val-period 1e
-	
-	!python train.py --input-path files/input/sample.csv --separator , --sentence_column MessageProcessed --label_column Tags --save-dir files/output/ --wordembed-path '/content/gdrive/Shared drives/Data & Analytics/D&A Research/TKS/Modelos/Embedding/FastText/kv/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv' --epochs 5 --val --val-path files/input/sample_validation.csv --bidirectional --val-period 10i --max-decay-num 2 --max-patience 2 --learning-rate-decay 0.1 --patience-threshold 0.98
 
 ## Prediction ##
 For local execution run command for one line predict:
 
-	python predict.py --model-path files/output/model.pkl --input-sentence "eu quero prever essa frase" --label-vocab files/output/vocab-label.pkl --save-dir files/output/pred.csv --wordembed-path files/input/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv
+	python predict.py --model-path *.pkl --input-sentence "eu quero prever essa frase" --label-vocab *.pkl --save-dir *.csv --wordembed-path *.kv
 
 For local execution run command for batch predict:
 
-	python predict.py --model-path files/output/model.pkl --input-path files/input/sample_predict.csv --sentence_column MessageProcessed --label-vocab files/output/vocab-label.pkl --save-dir files/output/pred.csv --wordembed-path files/input/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv
+	python predict.py --model-path *.pkl --input-path *.csv --sentence_column MessageProcessed --label-vocab *.pkl --save-dir *.csv --wordembed-path *.kv
 	
-	python predict.py --model-path files/output/model.pkl --input-path files/input/sample_predict.csv --sentence_column MessageProcessed --label-vocab files/output/vocab-label.pkl --save-dir files/output/pred.csv --wordembed-path files/input/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv --use-lstm-output
-
-For running on Google Colab for one line predict:
-
-	!python predict.py --model-path files/output/model.pkl --input-sentence "eu quero prever essa frase" --label-vocab files/output/vocab-label.pkl --save-dir files/output/pred.csv --wordembed-path '/content/gdrive/Shared drives/Data & Analytics/D&A Research/TKS/Modelos/Embedding/FastText/kv/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv'
-	
-	!python predict.py --model-path files/output/model.pkl --input-sentence "eu quero prever essa frase" --label-vocab files/output/vocab-label.pkl --save-dir files/output/pred.csv --wordembed-path '/content/gdrive/Shared drives/Data & Analytics/D&A Research/TKS/Modelos/Embedding/FastText/kv/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv' --use-lstm-output
-
-For running on Google Colab for batch predict:
-
-	!python predict.py --model-path files/output/model.pkl --input-path files/input/sample_predict.csv --sentence_column MessageProcessed --label-vocab files/output/vocab-label.pkl --save-dir files/output/pred.csv --wordembed-path '/content/gdrive/Shared drives/Data & Analytics/D&A Research/TKS/Modelos/Embedding/FastText/kv/Titan_v2_titan_v2_after_correction_fasttext_window4_mincount20_cbow.kv'
+	python predict.py --model-path *.pkl --input-path *.csv --sentence_column MessageProcessed --label-vocab *.pkl --save-dir *.csv --wordembed-path *.kv --use-lstm-output
 
 Data must be supplied in one csv file with one column which contain the sentences. File might be prepared as follows:
 
     (sample.csv)
 	MessageProcessed
-    the fat rat sat on a mat
-    the cat sat on a mat
-    ...,		
+    quero o meu boleto
+    não consegui contato por telefone
+    ...,	
+

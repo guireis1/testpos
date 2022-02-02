@@ -1,14 +1,18 @@
 import os
-import pickle
-import logging
 import argparse
-
-import yaap
+import logging
+import pickle
 import torch
+import yaap
+import numpy as np
 
-import TakeBlipPosTagger.utils as utils
+from azureml.core import Model
+from azureml.core import Run
+
 import TakeBlipPosTagger.vocab as vocab
 import TakeBlipPosTagger.model as model
+import TakeBlipPosTagger.utils as utils
+from TakeBlipPosTagger.logger import AzuremlLogger
 from TakeBlipPosTagger.train import LSTMCRFTrainer
 
 parser = yaap.ArgParser(
@@ -30,18 +34,16 @@ group.add('--label_column', type=str, required=True,
           help='String with the name of the column of labels to be read from input file.')
 group.add('--save-dir', type=str, required=True,
           help='Directory to save outputs (checkpoints, vocabs, etc.)')
-group.add('--use-pre-processing', action='store_true', default=False,
+group.add('--use_pre_processing', action='store_true', default=False,
           help='Whether to pre process input data.')
-
 
 group = parser.add_group('Word Embedding Options')
 group.add('--wordembed-path', type=str,
-          help='Path to pre-trained word embeddings. '
-               'If embedding type is glove, glove-style embedding '
-               'file is expected. If embedding type is fasttext, '
-               'fasttext model file is expected. The number of '
-               'specifications must match the number of inputs.')
-
+          help='Name of a pre-trained word embeddings.')
+group.add('--embedding_model_name', default=None,
+          help='Registered embedding model name in Azure ML.')
+group.add('--embedding_model_version', type=int, default=None,
+          help='Registered embedding model version in Azure ML.')
 
 group = parser.add_group('Training Options')
 group.add('--epochs', type=int, default=1,
@@ -68,7 +70,6 @@ group.add('--ckpt-period', type=utils.PeriodChecker, default='1e',
                'Periods are specified by an integer and a unit ("e": '
                'epoch, "i": iteration, "s": global step).')
 
-
 group = parser.add_group('Validation Options')
 group.add('--val', action='store_true', default=False,
           help='Whether to perform validation.')
@@ -80,7 +81,6 @@ group.add('--val-period', type=utils.PeriodChecker, default='100i',
                'epoch, "i": iteration, "s": global step).')
 group.add('--samples', type=int, default=10,
           help='Number of output samples to display at each iteration.')
-
 
 group = parser.add_group('Model Parameters')
 group.add('--word-dim', type=int, default=300,
@@ -96,35 +96,48 @@ group.add('--bidirectional', action='store_true', default=False,
 group.add('--alpha', type=float, default=0,
           help='L2 penalization parameter')
 
+group = parser.add_group('Azure variable Parameters')
+group.add('--train_ds_name', type=str, help='Train dataset variable name')
+group.add('--val_ds_name', type=str, help='Validation dataset variable name')
+
 
 def check_arguments(args):
-    assert args.input_path is not None, \
-        'At least one input file must be specified.'
+    assert args.input_path is not None, 'At least one input file must be specified.'
     assert args.separator in {'|', ';', ','}, 'Specify a valid separator.'
-    assert args.encoding in {'utf-8', 'utf8', 'latin-1'}, \
-        'Specify a valid encoding.'
+    assert args.encoding in {'utf-8', 'utf8',
+                             'latin-1'}, 'Specify a valid encoding.'
     if args.val:
         assert args.val_path is not None
     os.makedirs(args.save_dir, exist_ok=True)
 
 
-def main(args):
+def get_path_from_workspace(run, model_file_name,
+                            model_name, model_version=None):
+    ws = run.experiment.workspace
+    model_path = Model(ws,
+                       name=model_name).get_model_path(model_name=model_name,
+                                                       version=model_version,
+                                                       _workspace=ws)
+    print('Workspace model path', model_path)
+    return os.path.join(model_path, model_file_name)
+
+
+def main(run, args):
     logging.basicConfig(level=logging.INFO)
     check_arguments(args)
 
     pad_string = '<pad>'
     unk_string = '<unk>'
 
-    input_path = args.input_path
-    val_path = args.val_path if args.val else None
-    wordembed_path = args.wordembed_path
-    
-    logging.info('Input: {input_path}\nValidation: {val_path}\nWE: {we_path}'.format(
-        input_path=input_path,
-        val_path=val_path,
-        we_path=wordembed_path
-    ))
+    azml_logger = AzuremlLogger(run, torch.__version__)
+    logging.info('AzuremlLogger active')
 
+    input_path = run.input_datasets[args.train_ds_name]
+    val_path = run.input_datasets[args.val_ds_name] if args.val else None
+    wordembed_path = get_path_from_workspace(run=run,
+                                             model_file_name=args.wordembed_path,
+                                             model_name=args.embedding_model_name,
+                                             model_version=args.embedding_model_version)
     logging.info('Creating vocabulary...')
 
     input_vocab = vocab.create_vocabulary(
@@ -144,13 +157,16 @@ def main(args):
         encoding=args.encoding,
         separator=args.separator,
         is_label=True)
-    
+
+    logging.info(
+        f'Input: {input_path}\nValidation: {val_path}\nWE: {wordembed_path}')
     logging.info('Vocabulary and labels created')
 
     # Copying configuration file to save directory if config file is specified.
     if args.config:
-        config_path = os.path.join(args.save_dir, os.path.basename(args.config))
-        os.system('cp %s %s' % (args.config, config_path))
+        config_path = os.path.join(args.save_dir,
+                                   os.path.basename(args.config))
+        os.system(f'cp {args.config} {config_path}')
 
     if val_path:
         sentences = vocab.read_sentences(
@@ -173,24 +189,24 @@ def main(args):
         pad_idx=input_vocab.f2i[pad_string],
         unk_idx=input_vocab.f2i[unk_string],
         device=device).to(device)
-
-    bilstmcrf_model = model.LSTMCRF(
-        device=device,
-        crf=crf,
-        vocab_size=len(input_vocab),
-        word_dim=args.word_dim,
-        hidden_dim=args.lstm_dim,
-        layers=args.lstm_layers,
-        dropout_prob=args.dropout_prob,
-        bidirectional=args.bidirectional,
-        alpha=args.alpha
-    ).to(device)
+    bilstmcrf_model = model.LSTMCRF(device=device,
+                                   crf=crf,
+                                   vocab_size=len(input_vocab),
+                                   word_dim=args.word_dim,
+                                   hidden_dim=args.lstm_dim,
+                                   layers=args.lstm_layers,
+                                   dropout_prob=args.dropout_prob,
+                                   bidirectional=args.bidirectional,
+                                   alpha=args.alpha).to(device)
     bilstmcrf_model.reset_parameters()
+    params = sum(np.prod(p.size()) for p in bilstmcrf_model.parameters())
+    logging.info(f'Number of parameters: {params}')
 
     logging.info('Loading word embeddings...')
 
     fasttext = utils.load_fasttext_embeddings(wordembed_path, pad_string)
-    bilstmcrf_model.embeddings[0].weight.data = torch.from_numpy(fasttext[input_vocab.i2f.values()])
+    bilstmcrf_model.embeddings[0].weight.data = torch.from_numpy(
+        fasttext[input_vocab.i2f.values()])
     bilstmcrf_model.embeddings[0].weight.requires_grad = False
 
     logging.info('Beginning training...')
@@ -218,11 +234,15 @@ def main(args):
         max_patience=args.max_patience,
         max_decay_num=args.max_decay_num,
         patience_threshold=args.patience_threshold,
-        val_path=val_path)
+        val_path=val_path,
+        azureml_logger=azml_logger
+    )
     trainer.train()
     logging.info('Done!')
 
 
 if __name__ == '__main__':
+    run = Run.get_context()
     args = parser.parse_args()
-    main(args)
+    main(run, args)
+    run.complete()

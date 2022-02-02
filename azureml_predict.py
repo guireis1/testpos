@@ -3,10 +3,14 @@ from inference_schema.parameter_types.standard_py_parameter_type import Standard
 from api_postagging_predict import AzuremlPosTaggingPredict
 import logging
 
+
 def init():
     logging.info('Init start')
     global azureml_postagging
-    azureml_postagging =  AzuremlPosTaggingPredict()
+    try:
+        azureml_postagging = AzuremlPosTaggingPredict()
+    except Exception as e:
+        print('error', e)
     logging.info('Init function finalized! All models were read!')
 
 @input_schema('sentence', StandardPythonParameterType('Quero o meu boleto'))

@@ -5,6 +5,7 @@ from TakeBlipPosTagger import utils
 from TakeBlipPosTagger import vocab
 from TakeBlipPosTagger import data
 
+
 class PosTaggerPredict:
     def __init__(self, model, label_path, embedding, save_dir=None,
                  encoding=None, separator=None):
@@ -55,7 +56,9 @@ class PosTaggerPredict:
                   for sequence in predicted_line.data.tolist()]]
         return line, preds[0]
 
-    def predict_batch(self, filepath, sentence_column, pad_string, unk_string, batch_size, shuffle, use_pre_processing, output_lstm, sentences=None):
+    def predict_batch(self, filepath, sentence_column, pad_string, unk_string,
+                      batch_size, shuffle, use_pre_processing, output_lstm,
+                      sentences=None):
         self.model.train(False)
 
         input_vocab = vocab.create_vocabulary(
@@ -71,7 +74,9 @@ class PosTaggerPredict:
         logging.info('Loading dataset')
 
         if sentences:
-            dataset = data.MultiSentWordBatchDataset(sentences)
+            dataset = data.MultiSentWordBatchDataset(
+                use_pre_processing=use_pre_processing,
+                sentences=sentences)
             predictions = []
             use_index = True
         else:
@@ -116,21 +121,25 @@ class PosTaggerPredict:
 
             preds_all = utils.lexicalize_sequence(preds, lens_s, self.label_vocab)
 
-            sequence_batch_all = utils.lexicalize_sequence(sequence_batch, lens_s, input_vocab)
+            sequence_batch_all = utils.lexicalize_sequence(sequence_batch,
+                                                           lens_s, input_vocab)
 
             lstm_all = None
 
             if output_lstm:
                 lstm_preds = logits.max(2)[1]
                 lstm_preds_list = lstm_preds.data.tolist()
-                lstm_all = utils.lexicalize_sequence(lstm_preds_list, lens_s, self.label_vocab)
+                lstm_all = utils.lexicalize_sequence(lstm_preds_list, lens_s,
+                                                     self.label_vocab)
 
             if sentences:
                 index_all = index_wrapped.data.tolist()
                 predictions += [{'id': id,
                                  'processed_sentence': ' '.join(sentence),
                                  'tags': ' '.join(pred)}
-                                for id, sentence, pred in zip(index_all, sequence_batch_all, preds_all)]
+                                for id, sentence, pred in zip(index_all,
+                                                              sequence_batch_all,
+                                                              preds_all)]
             else:
                 utils.save_predict(self.save_dir, sequence_batch_all, preds_all, lstm_all)
             

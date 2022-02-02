@@ -180,9 +180,8 @@ class LSTMCRFTrainer(object):
                         # logging.info('Early stopping')
                         # logging.info('Saving model ...')
                         # self.save_model()
-                        mlflow.log_metric("Final iteration", global_iter)
+                        # mlflow.log_metric("Final iteration", global_iter)
                         #mlflow.log_metric("Final negative_loglik", negative_loglik.item())   
-                        return self.model
                         break
             train_data.dataset.close_file()
             self.on_epoch_complete(epoch_idx, global_iter, global_step)
@@ -190,9 +189,8 @@ class LSTMCRFTrainer(object):
                 # logging.info('Early stopping')
                 # logging.info('Saving model ...')
                 # self.save_model()
-                mlflow.log_metric("Final iteration", global_iter)
+                # mlflow.log_metric("Final iteration", global_iter)
                 #mlflow.log_metric("Final negative_loglik", negative_loglik.item())   
-                return self.model
                 break
         # logging.info(f'iteration ={global_iter}')
         # logging.info(f'negative_loglik={negative_loglik:.4f}')

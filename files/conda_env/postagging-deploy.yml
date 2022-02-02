@@ -11,8 +11,9 @@ dependencies:
   - wheel=0.36.2
   - pip:
     - azure-storage-blob==12.5.0
-    - azureml-core==1.18.0.post4
+    - azureml-core==1.18.0
     - azureml-pipeline==1.18.0
     - gensim==3.8.3
     - torch==1.7.1
+    - TakeBlipPosTagger==1.0.6
 prefix: D:\apps\Anaconda3\envs\postagging-deploy

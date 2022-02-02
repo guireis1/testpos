@@ -21,7 +21,7 @@ dependencies:
     - markdown==3.2.2
     - mkl==2021.1.1
     - pyaap==1.0.1
-    - takesentencetokenizer==1.0.1
-    - TakeBlipPosTagger==0.1.2
+    - take-text-preprocess==0.0.4
+    - TakeBlipPosTagger==1.0.6
     - torch==1.7.1
 prefix: D:\apps\Anaconda3\envs\postagging-predict-linux

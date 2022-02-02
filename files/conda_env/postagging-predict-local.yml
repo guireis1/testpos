@@ -35,5 +35,6 @@ dependencies:
     - packaging==20.8
     - pillow==7.2.0
     - torch==1.7.1
-    - TakeSentenceTokenizer==1.0.1
+    - pyaap==1.0.1
+    - take-text-preprocess==0.0.4
 prefix: D:\apps\Anaconda3\envs\postagging-predict-local

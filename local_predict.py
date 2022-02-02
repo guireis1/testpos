@@ -1,13 +1,10 @@
 import os
 import sys
 import torch
-import pickle
 import logging
 import yaap
 import argparse
 import TakeBlipPosTagger.utils as utils
-import TakeBlipPosTagger.data as data
-import TakeBlipPosTagger.vocab as vocab
 from TakeBlipPosTagger.predict import PosTaggerPredict
 
 
@@ -58,10 +55,12 @@ group.add("--use-lstm-output", action='store_true', default=False,
 
 
 def check_arguments(args):
-    assert args.input_path is not None or args.input_sentence is not None, "At least one input file must be specified."
+    assert args.input_path is not None or args.input_sentence is not None, \
+        "At least one input file must be specified."
 
     if args.input_path is not None:
-        assert args.sentence_column is not None, "When reading from file the column to be read must be specified."
+        assert args.sentence_column is not None, \
+            "When reading from file the column to be read must be specified."
 
 
 def main(args):
@@ -100,6 +99,7 @@ def main(args):
             use_pre_processing=args.use_pre_processing,
             output_lstm=args.use_lstm_output)
         return None
+
 
 if __name__ == '__main__':
     args = parser.parse_args()

@@ -43,6 +43,13 @@ def populate_vocab(sentences, vocab):
             vocab.add(word)
 
 
+def line_pre_process(line, use_pre_processing):
+    if use_pre_processing:
+        return pre_process(line, PREPROCESS_OPTION).split()
+    else:
+        return line.split()
+
+
 def create_vocabulary(input_path, column_name, pad_string, unk_string,
                       encoding, separator, use_pre_processing=False,
                       is_label=False, sentences=None):
@@ -53,8 +60,7 @@ def create_vocabulary(input_path, column_name, pad_string, unk_string,
         use_pre_processing = False
     
     if sentences:
-        logging.info('Pre processing...')
-        sentences = [pre_process(sentence['sentence'], PREPROCESS_OPTION).split()
+        sentences = [line_pre_process(sentence['sentence'], use_pre_processing)
                      for sentence in sentences]
     else:
         sentences = read_sentences(input_path, column_name, encoding,
@@ -67,10 +73,8 @@ def read_sentences(path, column, encoding, separator, use_pre_processing):
     with open(path, newline='', encoding=encoding) as sentences_file:
         reader = csv.DictReader(sentences_file, delimiter = separator)
         if use_pre_processing:
-            logging.info('Pre processing...')
             for line in reader:
                 yield pre_process(line[column], PREPROCESS_OPTION).split()
-            logging.info('Finished pre processing...')
         else:
             for line in reader:
                 yield line[column].split()
