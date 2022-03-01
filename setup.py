@@ -8,7 +8,7 @@ with open("package_requirements.txt") as f:
 
 setuptools.setup(
     name="TakeBlipPosTagger",
-    version="1.0.6",
+    version="1.0.7",
     author="Data and Analytics Research",
     author_email="analytics.dar@take.net",
     keywords='postagging',

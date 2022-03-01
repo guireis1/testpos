@@ -58,7 +58,7 @@ def create_vocabulary(input_path, column_name, pad_string, unk_string,
     vocabulary.add(unk_string)
     if is_label:
         use_pre_processing = False
-    
+
     if sentences:
         sentences = [line_pre_process(sentence['sentence'], use_pre_processing)
                      for sentence in sentences]
@@ -71,7 +71,7 @@ def create_vocabulary(input_path, column_name, pad_string, unk_string,
 
 def read_sentences(path, column, encoding, separator, use_pre_processing):
     with open(path, newline='', encoding=encoding) as sentences_file:
-        reader = csv.DictReader(sentences_file, delimiter = separator)
+        reader = csv.DictReader(sentences_file, delimiter=separator)
         if use_pre_processing:
             for line in reader:
                 yield pre_process(line[column], PREPROCESS_OPTION).split()
