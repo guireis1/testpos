@@ -6,8 +6,7 @@ import torch.optim as optim
 import TakeBlipPosTagger.model as model
 import TakeBlipPosTagger.utils as utils
 import TakeBlipPosTagger.data as data
-import TakeBlipPosTagger.logger as logger
-from TakeBlipPosTagger.logger import MLflowLogger
+import TakeBlipPosTagger.mlflowlogger as mlflowlogger
 
 
 class LSTMCRFTrainer(object):
@@ -50,7 +49,6 @@ class LSTMCRFTrainer(object):
         self.validation_number = 0
         self.run_id = run_id
         self.model_name = model_name
-        self.logger = MLflowLogger
 
         self.repeatables = {}
 
@@ -155,9 +153,9 @@ class LSTMCRFTrainer(object):
                     batch_sentences, batch_labels_var, lens_s)
                 negative_loglik = -loglik.mean()
                 print("negative_loglik", negative_loglik.item())
-                self.logger.save_metric(
+                mlflowlogger.save_metric(
                     "negative_loglik", negative_loglik.item())
-                self.logger.save_system_metrics()
+                mlflowlogger.save_system_metrics()
                 negative_loglik.backward()
                 self.optimizer.step()
 
@@ -168,9 +166,9 @@ class LSTMCRFTrainer(object):
             self.on_epoch_complete(epoch_idx, global_iter, global_step)
             if self.logic_break:
                 break
-        self.logger.save_model(self.model, self.model_name)
-        self.logger.save_predict(self.save_dir, 'predict_validation.csv')
-        self.logger.save_param("Final iteration", global_iter)
+        mlflowlogger.save_model(self.model, self.model_name)
+        mlflowlogger.save_predict(self.save_dir, 'predict_validation.csv')
+        mlflowlogger.save_param("Final iteration", global_iter)
         return self.model
 
     def check_loss(self, loss):
@@ -265,15 +263,15 @@ class LSTMCRFTrainer(object):
         self.check_loss(loss)
 
         confusion_matrix = confusion_matrix[2:, 2:]
-        self.logger.save_metric("negative_loglik validate", loss.item())
-        self.logger.save_confusion_matrix_from_tensor(
+        mlflowlogger.save_metric("negative_loglik validate", loss.item())
+        mlflowlogger.save_confusion_matrix_from_tensor(
             confusion_matrix=confusion_matrix,
             labels=list(self.label_vocab.f2i.keys())[2:],
             current_epoch=self.validation_number,
             run_id=self.run_id,
             save_dir=self.save_dir
         )
-        self.logger.save_metrics(confusion_matrix=confusion_matrix,
+        mlflowlogger.save_metrics(confusion_matrix=confusion_matrix,
                                  labels=list(self.label_vocab.f2i.keys())[2:],
                                  run_id=self.run_id)
 
