@@ -7,6 +7,7 @@ import TakeBlipPosTagger.model as model
 import TakeBlipPosTagger.utils as utils
 import TakeBlipPosTagger.data as data
 import TakeBlipPosTagger.logger as logger
+from TakeBlipPosTagger.logger import MLflowLogger
 
 
 class LSTMCRFTrainer(object):
@@ -49,7 +50,7 @@ class LSTMCRFTrainer(object):
         self.validation_number = 0
         self.run_id = run_id
         self.model_name = model_name
-        self.logger = logger.MLflowLogger
+        self.logger = MLflowLogger
 
         self.repeatables = {}
 
