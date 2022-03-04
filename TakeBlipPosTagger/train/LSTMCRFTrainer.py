@@ -271,7 +271,7 @@ class LSTMCRFTrainer(object):
             save_dir=self.save_dir
         )
         mlflowlogger.save_metrics(confusion_matrix=confusion_matrix,
-                                 labels=list(self.label_vocab.f2i.keys())[2:],
-                                 run_id=self.run_id)
+                                 labels=list(self.label_vocab.f2i.keys())[2:]
+                                 )
 
         self.validation_number += 1
