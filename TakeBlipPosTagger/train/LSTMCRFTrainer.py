@@ -268,7 +268,6 @@ class LSTMCRFTrainer(object):
             confusion_matrix=confusion_matrix,
             labels=list(self.label_vocab.f2i.keys())[2:],
             current_epoch=self.validation_number,
-            run_id=self.run_id,
             save_dir=self.save_dir
         )
         mlflowlogger.save_metrics(confusion_matrix=confusion_matrix,
